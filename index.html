@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f8f4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Golf Log">
+<title>Golf Round Log v4</title>
+<style>
+:root{--bg:#f5f8f4;--card:#fff;--line:#e2ebe3;--text:#3b4842;--sub:#7d8c85;--g:#6cb58a;--gd:#3f8a5f;--gl:#e7f4eb;--b:#6fa8d6;--bl:#e6f1fb;--pink:#fbe5e9;--org:#fdf1de}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;font-size:14px;-webkit-tap-highlight-color:transparent;padding-bottom:env(safe-area-inset-bottom)}
+button{font-family:inherit;cursor:pointer;color:inherit}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.hwrap{max-width:980px;margin:0 auto;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.logo{font-weight:800;color:var(--gd);font-size:15px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.sync{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--gl);color:var(--gd);border:0;white-space:nowrap}
+.sync.ok{background:var(--gl);color:var(--gd)}.sync.wait{background:var(--org);color:#a0702a}.sync.busy{background:var(--bl);color:#3c78a8}.sync.err{background:var(--pink);color:#b5566a}
+.tabs{display:flex;background:#eef2ee;border-radius:12px;padding:3px;gap:2px}
+.tabs button{border:0;background:transparent;padding:7px 10px;border-radius:9px;font-size:13px;color:var(--sub);font-weight:700}
+.tabs button.on{background:#fff;color:var(--gd);box-shadow:0 1px 2px rgba(0,0,0,.07)}
+main{max-width:980px;margin:0 auto;padding:12px 12px 90px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.ttl{font-size:13px;font-weight:800;color:var(--gd);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.grid3{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3 .wide{grid-column:1/-1}
+@media(min-width:720px){.grid3{grid-template-columns:1fr 2fr 2fr}.grid3 .wide{grid-column:auto}}
+.f{display:block;font-size:11px;color:var(--sub);margin-bottom:3px}
+.in{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fbfdfb;font-size:16px;color:var(--text);font-family:inherit;min-height:42px}
+.in:focus{outline:2px solid #bfe0cb;border-color:#bfe0cb}
+.seg{display:inline-flex;background:#eef2ee;border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:700;color:var(--sub)}
+.seg button.on{background:#fff;color:var(--gd);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.between{justify-content:space-between}
+.mt{margin-top:10px}
+.btn{border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:700}
+.btn:disabled{opacity:.45}
+.btn.pri{background:var(--g);border-color:var(--g);color:#fff}
+.btn.soft{background:var(--gl);border-color:#cfe6d6;color:var(--gd)}
+.btn.blue{background:var(--bl);border-color:#cfe2f3;color:#3c78a8}
+.btn.warn{background:var(--org);border-color:#f2dfbd;color:#a0702a}
+.btn.del{background:var(--pink);border-color:#f3cfd6;color:#b5566a}
+.btn.sm{padding:5px 9px;font-size:12px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;background:#eef2ee;color:var(--sub);font-weight:700}
+.badge.playing{background:var(--bl);color:#3c78a8}.badge.done{background:var(--gl);color:var(--gd)}.badge.aborted{background:var(--org);color:#a0702a}
+.strip{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.hb{flex:0 0 auto;width:50px;border:1px solid var(--line);border-radius:11px;padding:4px 0;text-align:center;background:#fafcfa}
+.hb .n{font-size:10px;color:var(--sub)}.hb .v{font-size:14px;font-weight:800}
+.hb.cur{outline:2px solid var(--g);outline-offset:-1px}
+.sep{flex:0 0 2px;background:var(--line);border-radius:2px;margin:4px 2px}
+.r-eg{background:#d7e7fb!important}.r-bi{background:#e5f1fc!important}.r-pa{background:#e7f4eb!important}.r-bo{background:#fdf2df!important}.r-db{background:#fbe4e4!important}.r-tr{background:#f6d5de!important}
+.hhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.hnum{font-size:26px;font-weight:900;color:var(--gd);line-height:1}
+.hnum small{display:block;font-size:11px;color:var(--sub);font-weight:600;margin-top:3px}
+.hstat{display:flex;gap:6px}
+.hstat div{min-width:58px;text-align:center;border:1px solid var(--line);border-radius:12px;padding:5px 6px;background:#fafcfa}
+.hstat small{display:block;font-size:10px;color:var(--sub)}
+.hstat b{font-size:20px}
+.flags{font-size:11px;color:var(--sub);margin-top:4px}
+.flags span{margin-right:8px}
+.shots{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.shot{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff;text-align:left;width:100%;font-size:15px}
+.shot .no{width:22px;height:22px;border-radius:50%;background:var(--gl);color:var(--gd);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.shot .cl{font-weight:800;min-width:38px}
+.shot .ar{color:#b8c6be}
+.shot .ed{margin-left:auto;font-size:11px;color:var(--sub)}
+.shot.editing{outline:2px solid var(--b);background:var(--bl)}
+.empty{font-size:12px;color:var(--sub);text-align:center;padding:12px;border:1px dashed var(--line);border-radius:12px}
+.pal{background:#f8fbf8;border:1px solid var(--line);border-radius:14px;padding:10px}
+.palhead{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.palhead b{font-size:13px;color:var(--gd)}
+.palhead b.edit{color:#3c78a8}
+.hint{font-size:10px;color:var(--sub)}
+.plabel{font-size:11px;font-weight:700;color:var(--sub);margin:8px 0 4px}
+.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+@media(min-width:720px){.chips{grid-template-columns:repeat(8,1fr)}}
+.chip{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 2px;font-size:15px;font-weight:800;min-height:48px;touch-action:manipulation}
+.chip.on{background:var(--g);border-color:var(--g);color:#fff}
+.chip.t.on{background:var(--b);border-color:var(--b)}
+.chip.k-good{background:#f1f9f3}.chip.k-miss{background:#fdf8ec}.chip.k-sand{background:#f8f1df}.chip.k-bad{background:#fdf0f2}.chip.k-pt{background:#eef6fd}
+.chip.on.k-good,.chip.on.k-miss,.chip.on.k-sand,.chip.on.k-bad,.chip.on.k-pt{background:var(--b)}
+.editbar{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.navrow{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
+.navrow .btn{flex:1;padding:13px}
+#shareCard{max-width:680px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
+.sc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;border-bottom:2px solid #bfe0cb;padding-bottom:10px;margin-bottom:12px}
+.sc-kicker{font-size:10px;letter-spacing:.15em;color:var(--g);font-weight:800}
+.sc-course{font-size:20px;font-weight:900}
+.sc-meta{font-size:11px;color:var(--sub);margin-top:2px}
+.sc-score{text-align:right;white-space:nowrap}
+.sc-score .big{font-size:34px;font-weight:900;line-height:1}
+.sc-score .rel{display:inline-block;margin-top:4px;font-size:14px;font-weight:800;padding:2px 10px;border-radius:99px;background:#eef2ee}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.kpi{background:#f7fbf8;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+.kpi small{display:block;font-size:10px;color:var(--sub)}
+.kpi b{font-size:19px;color:var(--gd)}
+.kpi i{display:block;font-style:normal;font-size:10px;color:var(--sub)}
+.blocks{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:12px}
+.blocks.b3{grid-template-columns:repeat(3,1fr)}
+.blk{border:1px solid var(--line);border-radius:10px;text-align:center;padding:5px 2px;background:#fafcfa}
+.blk small{display:block;font-size:10px;color:var(--sub)}
+.blk b{font-size:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:#f1f6f2;color:var(--sub);font-weight:700;padding:5px 3px;font-size:11px}
+.tbl td{border-bottom:1px solid #eef3ef;padding:5px 3px;text-align:center;vertical-align:middle}
+.tbl td.log{text-align:left}
+.tbl td.hn{font-weight:800;color:var(--gd)}
+.tbl td.rl{font-weight:800}
+.tbl tr.sub td{background:#f8faf8;font-size:11px;color:var(--sub);border-bottom:1px solid #e3ebe5}
+.tbl tr.sub td.rl{color:var(--text)}
+.tbl tr.half td{background:#eef6f0;font-weight:800;color:var(--gd)}
+.sh{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;margin:1px 2px 1px 0;background:#f3f6f4;border:1px solid #e6ece8;white-space:nowrap}
+.sh b{font-weight:800}
+.sh.k-good{background:#eaf6ee;border-color:#d3ebdc}.sh.k-miss{background:#fdf5e6;border-color:#f3e3c4}.sh.k-sand{background:#f6eedb;border-color:#eadcb8}.sh.k-bad{background:#fbe7eb;border-color:#f2ccd4}.sh.k-pt{background:#e7f1fb;border-color:#cfe2f3}
+.legend{font-size:10px;color:var(--sub);margin-top:8px;text-align:right}
+.kgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:720px){.kgrid{grid-template-columns:repeat(3,1fr)}}
+.two{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:720px){.two{grid-template-columns:1fr 1fr}}
+.bar{display:grid;grid-template-columns:44px 1fr 74px;align-items:center;gap:6px;font-size:12px;margin:3px 0}
+.bar .bl{font-weight:800;text-align:right}
+.bar .bt{height:14px;background:#f1f5f2;border-radius:7px;overflow:hidden}
+.bar .bt i{display:block;height:100%;background:#a8d8b9;border-radius:7px}
+.bar.t .bt i{background:#a9cdec}
+.bar .bv{font-weight:700}.bar .bv small{color:var(--sub);font-weight:400;margin-left:4px}
+.scroll{overflow-x:auto}
+.mx{border-collapse:collapse;font-size:11px;min-width:100%}
+.mx th,.mx td{border:1px solid #edf2ee;padding:4px 5px;text-align:center;white-space:nowrap}
+.mx th{background:#f1f6f2;color:var(--sub)}
+.hist{display:flex;flex-direction:column;gap:6px}
+.hi{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafcfa}
+.hi .top{display:flex;justify-content:space-between;gap:8px}
+.hi .nm{font-weight:800}
+.hi .mt2{font-size:11px;color:var(--sub);margin-top:2px}
+.hi .sc{font-size:20px;font-weight:900;color:var(--gd);text-align:right;white-space:nowrap}
+.hi .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+details.rule{font-size:11px;color:var(--sub);margin-top:8px}
+details.rule summary{cursor:pointer;font-weight:700}
+details.rule li{margin:2px 0}
+.modal{position:fixed;inset:0;background:rgba(40,55,48,.35);z-index:50;display:flex;align-items:center;justify-content:center;padding:14px}
+.mbox{background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:16px}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#3b4842;color:#fff;font-size:13px;padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:60;max-width:90vw;text-align:center}
+.toast.show{opacity:.95}
+.note{font-size:11px;color:var(--sub)}
+.dlg-msg{font-size:14px;line-height:1.6;margin:0 0 14px;white-space:pre-line}
+.dlg-btns{display:flex;flex-direction:column;gap:8px}
+.dlg-btns .btn{padding:13px;font-size:15px;width:100%}
+.rs-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.rs-item{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafcfa;width:100%;text-align:left;font-size:13px}
+.rs-item small{display:block;color:var(--sub);font-size:11px;margin-top:2px}
+.trend{display:flex;align-items:flex-end;gap:4px;height:120px;padding:4px 0;border-bottom:1px solid var(--line)}
+.trend .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.trend .col i{display:block;width:100%;max-width:28px;border-radius:6px 6px 0 0;background:#a8d8b9}
+.trend .col b{font-size:11px;margin-bottom:2px}
+.trend-x{display:flex;gap:4px;margin-top:3px}
+.trend-x span{flex:1;font-size:9px;color:var(--sub);text-align:center;min-width:0;overflow:hidden;white-space:nowrap}
+.mbox .seg button{padding:9px 14px}
+.newbar{display:flex;gap:8px;margin-bottom:12px}
+.newbar .btn{flex:1;padding:14px;font-size:16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div class="logo">⛳ Golf Log <span class="sync" id="saveBadge">v4</span></div>
+    <nav class="tabs" id="tabs">
+      <button type="button" data-tab="input" class="on">入力</button>
+      <button type="button" data-tab="share">コーチ共有</button>
+      <button type="button" data-tab="stats">分析</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ================= 入力 ================= -->
+<section id="view-input">
+  <div class="newbar">
+    <button type="button" class="btn pri" id="btnNew">＋ 新しいラウンド</button>
+    <button type="button" class="btn warn" id="btnAbort" style="flex:0 0 auto">ラウンド中止</button>
+  </div>
+  <div class="card">
+    <div class="ttl"><span>ラウンド基本情報 <span id="stBadge" class="badge playing">入力中</span></span>
+      <button type="button" class="btn sm" id="btnSettings">⚙ ボタン編集・設定</button></div>
+    <div class="grid3">
+      <div class="wide"><label class="f" for="fDate">日付</label><input class="in" type="date" id="fDate"></div>
+      <div><label class="f" for="fCourse">ゴルフ場名</label><input class="in" id="fCourse" list="courseList" placeholder="例：○○CC"><datalist id="courseList"></datalist></div>
+      <div><label class="f" for="fTour">大会名</label><input class="in" id="fTour" placeholder="例：月例会／練習"></div>
+    </div>
+    <div class="row between mt">
+      <div class="row">
+        <div class="seg" id="segMode"><button type="button" data-v="18">18H</button><button type="button" data-v="9">9H</button></div>
+        <div class="seg" id="segStart"><button type="button" data-v="OUT">OUTスタート</button><button type="button" data-v="IN">INスタート</button></div>
+      </div>
+      <div class="row">
+        <button type="button" class="btn pri sm" id="btnFinish">ラウンド完了</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:10px 10px 6px">
+    <div class="row between" style="margin:0 2px 6px"><span class="f" style="margin:0">ホール（ラウンド順）</span><b id="stripSum" style="font-size:12px;color:var(--gd)"></b></div>
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <div class="card">
+    <div class="hhead">
+      <div class="hnum" id="hNum">1H<small></small></div>
+      <div><span class="f">Par</span><div class="seg" id="segPar"><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button></div></div>
+      <div>
+        <div class="hstat">
+          <div id="hRelBox"><small>Par対比</small><b id="hRel">-</b></div>
+          <div><small>打数</small><b id="hSt">0</b></div>
+          <div><small>PT</small><b id="hPt" style="color:#3c78a8">0</b></div>
+        </div>
+        <div class="flags" id="hFlags"></div>
+      </div>
+    </div>
+
+    <div class="shots" id="shotList"></div>
+
+    <div class="pal">
+      <div class="palhead"><b id="palMode">第1打を入力</b><span class="hint" id="palHint">クラブ→着弾点の順にタップで記録</span>
+        <button type="button" class="btn sm" id="btnCancelIns" hidden>挿入をやめる</button></div>
+      <div class="editbar" id="editBar" hidden>
+        <button type="button" class="btn sm" id="eUp">↑ 前へ</button>
+        <button type="button" class="btn sm" id="eDown">↓ 後へ</button>
+        <button type="button" class="btn sm blue" id="eIns">この前に挿入</button>
+        <button type="button" class="btn sm del" id="eDel">削除</button>
+        <button type="button" class="btn sm pri" id="eDone">編集完了</button>
+      </div>
+      <div class="plabel">使用クラブ</div><div class="chips" id="clubBtns"></div>
+      <div class="plabel">着弾点</div><div class="chips" id="tgtBtns"></div>
+    </div>
+
+    <div class="navrow">
+      <button type="button" class="btn" id="btnPrev">‹ 前のホール</button>
+      <button type="button" class="btn soft" id="btnNext">次のホール ›</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= コーチ共有 ================= -->
+<section id="view-share" hidden>
+  <div class="card">
+    <label class="f" for="shareSel">表示するラウンド</label><select class="in" id="shareSel"></select>
+    <div class="row mt">
+      <button type="button" class="btn pri sm" id="btnImg">📷 画像で保存／送信</button>
+      <button type="button" class="btn sm" id="btnCsvOne">CSV出力</button>
+      <button type="button" class="btn soft sm" id="btnEditShare">✎ このラウンドを編集</button>
+    </div>
+  </div>
+  <div id="shareCard"></div>
+</section>
+
+<!-- ================= 分析 ================= -->
+<section id="view-stats" hidden>
+  <div class="card">
+    <div class="ttl"><span>通算分析</span>
+      <div class="row"><select class="in" id="stFilter" style="width:auto;font-size:13px;padding:6px 8px;min-height:0"></select></div></div>
+    <div class="kgrid" id="kpiGrid"></div>
+    <details class="rule"><summary>ⓘ 集計ルール</summary><ul>
+      <li>打数＝記録したショット数（ﾍﾟﾅも1打として加算）。Par対比は入力済みホールのみで計算。</li>
+      <li>PT＝クラブまたは着弾点が「PT」のショット数。</li>
+      <li>FWキープ率＝Par4・5のティーショット着弾点が「FW」の割合。</li>
+      <li>パーオン率＝「ﾊﾟｰｵﾝ」を選択、または「ｵﾝ」／パット開始までの打数が Par−2 以内のホールの割合。</li>
+      <li>平均スコアは全ホール入力済みのラウンドのみ（18H・9H別）。FW・パーオン・PTは途中終了分も含む全入力ホールで計算。</li>
+    </ul></details>
+  </div>
+  <div class="two">
+    <div class="card"><div class="ttl">スコア推移（直近10ラウンド・完走分）</div><div id="trendBox"></div></div>
+    <div class="card"><div class="ttl">Par別 平均スコア</div><div class="kgrid" id="parGrid" style="grid-template-columns:repeat(3,1fr)"></div><p class="note" id="parNote"></p></div>
+  </div>
+  <div class="two">
+    <div class="card"><div class="ttl">クラブ使用頻度</div><div id="clubBars"></div></div>
+    <div class="card"><div class="ttl">着弾点分布</div><div id="tgtBars"></div></div>
+  </div>
+  <div class="card"><div class="ttl">クラブ別 着弾傾向（PT・ﾍﾟﾅ除く）</div><div class="scroll" id="matrix"></div></div>
+  <div class="card"><div class="ttl">保存済みラウンド</div><div class="hist" id="histList"></div></div>
+  <div class="card">
+    <div class="ttl">データ管理（この端末のみ）</div>
+    <div class="row">
+      <button class="btn pri sm" id="btnBackup" type="button">💾 バックアップ保存(JSON)</button>
+      <button class="btn sm" id="btnRestore" type="button">復元(JSON)</button>
+      <input type="file" id="fileRestore" accept=".json,application/json" hidden>
+    </div>
+    <div class="row mt">
+      <button class="btn sm" id="btnCsvRounds" type="button">CSV：ラウンド集計</button>
+      <button class="btn sm" id="btnCsvShots" type="button">CSV：ショット明細</button>
+    </div>
+    <p class="note" id="bkState"></p>
+    <p class="note">データはこのiPhoneのブラウザ内にだけ保存されます（通信不要）。ブラウザのデータ消去・機種変更に備え、月1回程度「バックアップ保存」でファイルアプリ等へ保存してください。</p>
+  </div>
+</section>
+</main>
+
+<!-- 設定モーダル -->
+<div class="modal" id="modal" hidden>
+  <div class="mbox">
+    <div class="ttl" style="font-size:15px"><span>ボタン編集・設定</span><button type="button" class="btn sm" id="mClose">✕</button></div>
+    <label class="f" for="mClubs">使用クラブ（カンマまたは改行区切り・並び順＝ボタン順）</label>
+    <textarea class="in" id="mClubs" rows="3"></textarea>
+    <label class="f mt" for="mTgts">着弾点（カンマまたは改行区切り）</label>
+    <textarea class="in" id="mTgts" rows="3"></textarea>
+    <label class="row mt" style="font-size:13px"><input type="checkbox" id="mAuto"> クラブ「PT」「ﾍﾟﾅ」はタップだけで記録（着弾点も同名で自動設定）</label>
+    <div class="row between mt">
+      <button type="button" class="btn sm" id="mReset">ボタンを初期値に戻す</button>
+      <button type="button" class="btn pri" id="mSave">保存</button>
+    </div>
+  </div>
+</div>
+<!-- 確認ダイアログ（iPhoneの埋め込み表示でも動くよう confirm() を使わない） -->
+<div class="modal" id="dlg" hidden>
+  <div class="mbox" style="max-width:420px">
+    <div class="ttl" style="font-size:15px" id="dlgTitle"></div>
+    <p class="dlg-msg" id="dlgMsg"></p>
+    <div class="dlg-btns" id="dlgBtns"></div>
+  </div>
+</div>
+
+<!-- 新しいラウンド -->
+<div class="modal" id="newModal" hidden>
+  <div class="mbox">
+    <div class="ttl" style="font-size:15px"><span>新しいラウンドを開始</span><button class="btn sm" id="nClose" type="button">✕</button></div>
+    <div class="grid3">
+      <div class="wide"><label class="f" for="nDate">日付</label><input class="in" type="date" id="nDate"></div>
+      <div><label class="f" for="nCourse">ゴルフ場名</label><input class="in" id="nCourse" list="courseList" placeholder="例：○○CC"></div>
+      <div><label class="f" for="nTour">大会名</label><input class="in" id="nTour" placeholder="例：月例会／練習"></div>
+    </div>
+    <div class="row mt">
+      <div class="seg" id="nMode"><button type="button" data-v="18">18H</button><button type="button" data-v="9">9H</button></div>
+      <div class="seg" id="nStart"><button type="button" data-v="OUT">OUTスタート</button><button type="button" data-v="IN">INスタート</button></div>
+    </div>
+    <button class="btn pri mt" id="nGo" type="button" style="width:100%;padding:13px;font-size:15px">この内容で開始</button>
+    <div id="nResumeWrap">
+      <div class="plabel" style="margin-top:16px">または、途中のラウンドを再開</div>
+      <div class="rs-list" id="nResume"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ===== 定数・ユーティリティ ===== */
+const DEF_CLUBS=["1W","3W","5W","4U","5U","5I","6I","7I","8I","9I","P","52","58","PT","ﾍﾟﾅ"];
+const DEF_TARGETS=["FW","右","左","前","奥","OB","池","砂","ﾊﾟｰｵﾝ","ｵﾝ","PT","ﾍﾟﾅ"];
+const AUTO_PAIR=["PT","ﾍﾟﾅ"];
+const K={rounds:'glog_rounds_v1',cur:'glog_current_id_v1',set:'glog_settings_v1',bk:'glog_last_backup_v1'};
+['glog_sync_queue_v1','glog_sync_dels_v1','glog_last_sync_v1'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}}); // 旧・同期用データを掃除
+const STATUS={playing:'入力中',done:'完了',aborted:'途中終了'};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtRel=d=>d==null?'-':d===0?'E':d>0?'+'+d:String(d);
+const fmtRelF=v=>v==null||isNaN(v)?'-':Math.abs(v)<0.05?'E':(v>0?'+':'')+v.toFixed(1);
+const relCls=d=>d==null?'':d<=-2?'r-eg':d<0?'r-bi':d===0?'r-pa':d===1?'r-bo':d===2?'r-db':'r-tr';
+const pct=v=>v==null||isNaN(v)?'--':v.toFixed(1)+'%';
+const kind=t=>(['FW','ﾊﾟｰｵﾝ','ｵﾝ'].includes(t)?'k-good':['右','左','前','奥'].includes(t)?'k-miss':t==='砂'?'k-sand':['OB','池','ﾍﾟﾅ'].includes(t)?'k-bad':t==='PT'?'k-pt':'');
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function uid(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function loadJSON(k,def){try{const v=JSON.parse(localStorage.getItem(k));return v??def;}catch(e){return def;}}
+function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){toast('保存に失敗しました（容量不足の可能性）');}}
+let toastTimer=null;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);}
+
+/* ===== データモデル ===== */
+function newRound(){return{id:uid(),date:today(),course:'',tournament:'',mode:'18',start:'OUT',status:'playing',
+  holes:Array.from({length:18},(_,i)=>({n:i+1,par:4,shots:[]})),createdAt:Date.now(),updatedAt:Date.now()};}
+function normalizeRound(r){
+  r=r||{};const o=newRound();
+  o.id=String(r.id??o.id);o.date=r.date||o.date;
+  o.course=String(r.course??'');o.tournament=String(r.tournament??'');
+  o.mode=String(r.mode)==='9'?'9':'18';o.start=(r.start||r.startOrder)==='IN'?'IN':'OUT';
+  o.status=['playing','done','aborted'].includes(r.status)?r.status:'done';
+  o.holes=Array.from({length:18},(_,i)=>{const h=(r.holes||[])[i]||{};const p=+h.par;
+    return{n:i+1,par:[3,4,5,6].includes(p)?p:4,shots:(h.shots||[]).map(s=>({club:String(s.club??''),target:String(s.target??'')}))};});
+  o.createdAt=+r.createdAt||Date.now();o.updatedAt=+r.updatedAt||o.createdAt;
+  return o;
+}
+const order=r=>{const out=[0,1,2,3,4,5,6,7,8],inn=[9,10,11,12,13,14,15,16,17];
+  if(r.mode==='9')return r.start==='IN'?inn:out;return r.start==='IN'?[...inn,...out]:[...out,...inn];};
+const hasData=r=>!!(r&&((r.course||'').trim()||(r.tournament||'').trim()||r.holes.some(h=>h.shots.length)));
+const isPutt=s=>s.club==='PT'||s.target==='PT';
+
+/* ===== 集計ロジック ===== */
+function holeM(h){
+  const st=h.shots.length,putts=h.shots.filter(isPutt).length,played=st>0;
+  const fwElig=played&&h.par>=4,fw=fwElig&&h.shots[0].target==='FW';
+  let gir=false;
+  if(played){let reach=0;
+    for(let i=0;i<h.shots.length;i++){const s=h.shots[i];
+      if(s.target==='ﾊﾟｰｵﾝ'){gir=true;break;}
+      if(s.target==='ｵﾝ'){reach=i+1;break;}
+      if(isPutt(s)){reach=i;break;}}
+    if(!gir)gir=reach>0&&reach<=h.par-2;}
+  return{st,putts,played,rel:played?st-h.par:null,fwElig,fw,gir};
+}
+function roundM(r){
+  const ord=order(r);const m={ord,total:ord.length,st:0,parPlayed:0,putts:0,played:0,fwE:0,fw:0,gir:0,blocks:[],halves:[]};
+  ord.forEach(i=>{const h=r.holes[i],hm=holeM(h);
+    if(hm.played){m.played++;m.st+=hm.st;m.parPlayed+=h.par;m.putts+=hm.putts;if(hm.fwElig){m.fwE++;if(hm.fw)m.fw++;}if(hm.gir)m.gir++;}});
+  const agg=(idxs,label)=>{let st=0,par=0,pt=0,n=0;idxs.forEach(i=>{const h=r.holes[i],hm=holeM(h);if(hm.played){n++;st+=hm.st;par+=h.par;pt+=hm.putts;}});
+    return{label,st,par,pt,n,rel:n?st-par:null};};
+  for(let k=0;k<ord.length;k+=3){const ids=ord.slice(k,k+3);m.blocks.push(agg(ids,`${r.holes[ids[0]].n}-${r.holes[ids[ids.length-1]].n}H`));}
+  for(let k=0;k<ord.length;k+=9){const ids=ord.slice(k,k+9);m.halves.push(agg(ids,ids[0]===0?'OUT':'IN'));}
+  m.rel=m.played?m.st-m.parPlayed:null;m.complete=m.played===m.total;
+  m.fwRate=m.fwE?m.fw/m.fwE*100:null;m.girRate=m.played?m.gir/m.played*100:null;
+  return m;
+}
+
+/* ===== 状態 ===== */
+let S=Object.assign({clubs:[...DEF_CLUBS],targets:[...DEF_TARGETS],autoPair:true},loadJSON(K.set,{}));
+delete S.gasUrl;delete S.gasToken;
+let rounds=(loadJSON(K.rounds,[])||[]).map(normalizeRound);
+let cur=rounds.find(r=>r.id===localStorage.getItem(K.cur)&&r.status==='playing')||newRound();
+let holeIdx=firstOpen(cur),editIdx=-1,insertAt=-1,pend={club:null,target:null},shareId=null,tab='input';
+
+function firstOpen(r){const o=order(r);return o.find(i=>!r.holes[i].shots.length)??o[o.length-1];}
+function saveRounds(){saveJSON(K.rounds,rounds);}
+function saveCur(){cur.updatedAt=Date.now();const i=rounds.findIndex(r=>r.id===cur.id);
+  if(i>=0)rounds[i]=cur;else if(hasData(cur))rounds.push(cur);saveRounds();localStorage.setItem(K.cur,cur.id);}
+function resetPal(){editIdx=-1;insertAt=-1;pend={club:null,target:null};}
+
+/* ===== 確認ダイアログ（Promise） ===== */
+let dlgResolve=null;
+function ask(title,msg,buttons){
+  return new Promise(res=>{
+    if(dlgResolve)dlgResolve(null);
+    dlgResolve=res;
+    $('dlgTitle').textContent=title;$('dlgMsg').textContent=msg||'';
+    $('dlgBtns').innerHTML=buttons.map((b,i)=>`<button type="button" class="btn ${b.cls||''}" data-i="${i}">${esc(b.label)}</button>`).join('');
+    $('dlgBtns').onclick=e=>{const b=e.target.closest('button');if(!b)return;closeDlg(buttons[+b.dataset.i].value);};
+    $('dlg').hidden=false;
+  });
+}
+function closeDlg(v){$('dlg').hidden=true;const r=dlgResolve;dlgResolve=null;if(r)r(v);}
+function mergeRounds(list){let n=0;list.map(normalizeRound).forEach(x=>{const i=rounds.findIndex(r=>r.id===x.id);
+  if(i<0){rounds.push(x);n++;}else if(x.updatedAt>rounds[i].updatedAt){if(rounds[i].id===cur.id)cur=x;rounds[i]=x;n++;}});saveRounds();return n;}
+
+/* ===== 入力画面 ===== */
+function setSeg(id,v){[...$(id).children].forEach(b=>b.classList.toggle('on',b.dataset.v===String(v)));}
+function renderInfo(){
+  $('fDate').value=cur.date||'';$('fCourse').value=cur.course;$('fTour').value=cur.tournament;
+  setSeg('segMode',cur.mode);setSeg('segStart',cur.start);
+  const b=$('stBadge');b.textContent=STATUS[cur.status];b.className='badge '+cur.status;
+  updAbortBtn();
+  $('courseList').innerHTML=[...new Set(rounds.map(r=>r.course).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
+}
+function renderStrip(){
+  const ord=order(cur),m=roundM(cur);
+  $('strip').innerHTML=ord.map((idx,k)=>{const h=cur.holes[idx],hm=holeM(h);
+    return(k===9?'<div class="sep"></div>':'')+`<button type="button" class="hb ${relCls(hm.rel)} ${idx===holeIdx?'cur':''}" data-h="${idx}"><div class="n">${h.n}H・P${h.par}</div><div class="v">${fmtRel(hm.rel)}</div></button>`;}).join('');
+  $('stripSum').textContent=`通算 ${fmtRel(m.rel)}（${m.st}打）｜${m.played}/${m.total}H｜${m.putts}PT`;
+  const s=$('strip'),c=s.querySelector('.cur');if(c)s.scrollLeft=c.offsetLeft-s.clientWidth/2+c.clientWidth/2;
+}
+function renderHole(){
+  const ord=order(cur);if(!ord.includes(holeIdx))holeIdx=ord[0];
+  const h=cur.holes[holeIdx],hm=holeM(h),pos=ord.indexOf(holeIdx);
+  $('hNum').innerHTML=`${h.n}H<small>${pos+1}/${ord.length}ホール目</small>`;
+  setSeg('segPar',h.par);
+  $('hRel').textContent=fmtRel(hm.rel);$('hRelBox').className=relCls(hm.rel);
+  $('hSt').textContent=hm.st;$('hPt').textContent=hm.putts;
+  $('hFlags').innerHTML=hm.played?`${hm.fwElig?`<span>FW ${hm.fw?'○':'×'}</span>`:''}<span>パーオン ${hm.gir?'○':'×'}</span>`:'';
+  $('shotList').innerHTML=h.shots.length?h.shots.map((s,i)=>`<button type="button" class="shot ${i===editIdx?'editing':''}" data-i="${i}">
+    <span class="no">${i+1}</span><span class="cl">${esc(s.club)}</span><span class="ar">→</span><span class="sh ${kind(s.target)}">${esc(s.target)}</span><span class="ed">${i===editIdx?'編集中':'タップで編集'}</span></button>`).join('')
+    :'<div class="empty">まだ記録がありません。下のボタンで1打目を記録してください</div>';
+  const last=pos===ord.length-1;$('btnNext').textContent=last?'ラウンド完了 ✓':'次のホール ›';$('btnPrev').disabled=pos===0;
+  renderPalette();
+}
+function renderPalette(){
+  const h=cur.holes[holeIdx],ed=editIdx>=0?h.shots[editIdx]:null,pm=$('palMode');
+  if(ed){pm.textContent=`第${editIdx+1}打を編集中`;pm.className='edit';$('palHint').textContent='タップすると即反映されます';}
+  else if(insertAt>=0){pm.textContent=`第${insertAt+1}打の位置に挿入`;pm.className='edit';$('palHint').textContent='クラブ→着弾点をタップ';}
+  else{pm.textContent=`第${h.shots.length+1}打を入力`;pm.className='';$('palHint').textContent='クラブ→着弾点の順にタップで記録';}
+  $('editBar').hidden=!ed;$('btnCancelIns').hidden=insertAt<0;
+  const selC=ed?ed.club:pend.club,selT=ed?ed.target:pend.target;
+  $('clubBtns').innerHTML=S.clubs.map(c=>`<button type="button" class="chip ${c===selC?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+  $('tgtBtns').innerHTML=S.targets.map(t=>`<button type="button" class="chip t ${kind(t)} ${t===selT?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+}
+function afterChange(){saveCur();renderStrip();renderHole();updAbortBtn();}
+function tryAdd(){
+  if(!(pend.club&&pend.target))return renderPalette();
+  const shots=cur.holes[holeIdx].shots,s={club:pend.club,target:pend.target};
+  if(insertAt>=0){shots.splice(insertAt,0,s);insertAt=-1;}else shots.push(s);
+  pend={club:null,target:null};afterChange();
+}
+function onClub(c){
+  if(editIdx>=0){cur.holes[holeIdx].shots[editIdx].club=c;return afterChange();}
+  pend.club=c;if(S.autoPair&&AUTO_PAIR.includes(c)&&!pend.target)pend.target=c;tryAdd();
+}
+function onTarget(t){
+  if(editIdx>=0){cur.holes[holeIdx].shots[editIdx].target=t;return afterChange();}
+  pend.target=t;tryAdd();
+}
+function selectHole(i){holeIdx=i;resetPal();renderStrip();renderHole();}
+function navHole(d){const o=order(cur),p=o.indexOf(holeIdx)+d;
+  if(p>=o.length)return finishRound();if(p>=0)selectHole(o[p]);window.scrollTo({top:0,behavior:'smooth'});}
+function applyCoursePars(){
+  if(cur.holes.some(h=>h.shots.length)||cur.holes.some(h=>h.par!==4)||!cur.course.trim())return;
+  const prev=rounds.filter(r=>r.id!==cur.id&&r.course===cur.course).sort((a,b)=>b.updatedAt-a.updatedAt)[0];
+  if(prev){cur.holes.forEach((h,i)=>h.par=prev.holes[i].par);toast(`前回の「${cur.course}」のPar設定を反映しました`);afterChange();}
+}
+async function finishRound(){
+  const m=roundM(cur);if(!hasData(cur))return toast('記録がありません');
+  if(!m.complete){
+    const v=await ask('ラウンド完了',`未入力のホールが${m.total-m.played}ホールあります。\nこのまま完了にしますか？`,
+      [{label:'完了にする',cls:'pri',value:'ok'},{label:'入力に戻る',value:null}]);
+    if(v!=='ok')return;}
+  cur.status='done';saveCur();shareId=cur.id;blankCur();renderAll();switchTab('share');toast('ラウンドを保存しました。入力画面は新しいラウンド用に空にしました');
+}
+/* ===== 新しいラウンド／中止 ===== */
+const hasShots=r=>r.holes.some(h=>h.shots.length);
+const isLive=()=>cur.status==='playing'&&hasShots(cur);
+function dropEmptyCur(){if(cur.status==='playing'&&!hasShots(cur)&&rounds.some(r=>r.id===cur.id)){rounds=rounds.filter(r=>r.id!==cur.id);saveRounds();}}
+function blankCur(){cur=newRound();holeIdx=order(cur)[0];resetPal();localStorage.setItem(K.cur,cur.id);}
+function updAbortBtn(){$('btnAbort').hidden=!isLive();$('btnFinish').hidden=cur.status==='done';}
+/* 入力中のラウンドを閉じる。戻り値 false＝キャンセル */
+async function closeLive(title){
+  const m=roundM(cur);
+  const v=await ask(title,`${cur.course||'コース未入力'}（${m.played}/${m.total}H入力済み）を入力中です。\n入力済みのデータをどうしますか？`,
+    [{label:'途中終了として保存',cls:'warn',value:'save'},{label:'保存せずに破棄',cls:'del',value:'discard'},{label:'キャンセル',value:null}]);
+  if(!v)return false;
+  if(v==='discard'){
+    const v2=await ask('破棄の確認','このラウンドの記録を削除します。元に戻せません。',[{label:'削除する',cls:'del',value:'ok'},{label:'やめる',value:null}]);
+    if(v2!=='ok')return false;
+    rounds=rounds.filter(r=>r.id!==cur.id);saveRounds();toast('ラウンドを破棄しました');
+  }else{cur.status=m.complete?'done':'aborted';saveCur();toast('途中終了として保存しました');}
+  return true;
+}
+/* ＋新しいラウンド：どの状態からでも空の入力画面＋開始画面へ */
+async function newRoundFlow(){
+  if(isLive()&&!(await closeLive('新しいラウンド')))return;
+  dropEmptyCur();blankCur();renderAll();switchTab('input');openNewModal();
+}
+async function abortRound(){
+  if(!isLive())return newRoundFlow();
+  if(!(await closeLive('ラウンド中止')))return;
+  blankCur();renderAll();openNewModal();
+}
+let nState={mode:'18',start:'OUT'};
+function openNewModal(){
+  const last=[...rounds].sort((a,b)=>b.updatedAt-a.updatedAt)[0];
+  nState={mode:last?last.mode:'18',start:'OUT'};
+  $('nDate').value=today();$('nCourse').value='';$('nTour').value='';
+  setSeg('nMode',nState.mode);setSeg('nStart',nState.start);
+  const res=rounds.filter(r=>r.id!==cur.id&&r.status!=='done'&&hasData(r)).sort(byDate).slice(0,5);
+  $('nResumeWrap').hidden=!res.length;
+  $('nResume').innerHTML=res.map(r=>{const m=roundM(r);return `<button type="button" class="rs-item" data-id="${r.id}"><span><b>${esc(r.course||'コース未入力')}</b> <span class="badge ${r.status}">${STATUS[r.status]}</span><small>${esc(r.date)}・${r.mode}H・${m.played}/${m.total}H入力・${fmtRel(m.rel)}</small></span><span class="btn sm soft">再開</span></button>`;}).join('');
+  $('newModal').hidden=false;
+}
+function startNewRound(){
+  dropEmptyCur();const r=newRound();
+  r.date=$('nDate').value||today();r.course=$('nCourse').value.trim();r.tournament=$('nTour').value.trim();
+  r.mode=nState.mode;r.start=nState.start;r.status='playing';
+  cur=r;holeIdx=order(cur)[0];resetPal();localStorage.setItem(K.cur,cur.id);
+  $('newModal').hidden=true;
+  saveCur();applyCoursePars();renderAll();switchTab('input');toast('新しいラウンドを開始しました');
+}
+function resumeRound(id){
+  const r=rounds.find(x=>x.id===id);if(!r)return;
+  dropEmptyCur();
+  r.status='playing';cur=r;holeIdx=firstOpen(cur);resetPal();saveCur();
+  $('newModal').hidden=true;renderAll();switchTab('input');toast('ラウンドを再開しました');
+}
+function loadRound(id){const r=rounds.find(x=>x.id===id);if(!r)return;cur=r;holeIdx=firstOpen(cur);resetPal();localStorage.setItem(K.cur,cur.id);renderAll();switchTab('input');}
+
+/* ===== コーチ共有 ===== */
+const byDate=(a,b)=>(b.date||'').localeCompare(a.date||'')||b.updatedAt-a.updatedAt;
+function roundLabel(r){const m=roundM(r);return `${r.date||'-'}  ${r.course||'コース未入力'}  ${r.mode}H  ${m.st}打(${fmtRel(m.rel)})${r.status!=='done'?' ※'+STATUS[r.status]:''}`;}
+function chipsHtml(shots){const out=[];let i=0;
+  while(i<shots.length){if(isPutt(shots[i])){let j=i;while(j<shots.length&&isPutt(shots[j]))j++;out.push(`<span class="sh k-pt"><b>PT</b>×${j-i}</span>`);i=j;}
+    else{const s=shots[i];out.push(`<span class="sh ${kind(s.target)}"><b>${esc(s.club)}</b>→${esc(s.target)}</span>`);i++;}}
+  return out.join('')||'<span class="note">-</span>';}
+function renderShare(){
+  const list=[...rounds].filter(hasData).sort(byDate);
+  if(!shareId||!list.find(r=>r.id===shareId))shareId=hasData(cur)?cur.id:list[0]?.id;
+  $('shareSel').innerHTML=list.map(r=>`<option value="${r.id}" ${r.id===shareId?'selected':''}>${esc(roundLabel(r))}</option>`).join('')||'<option>保存済みラウンドなし</option>';
+  const r=list.find(x=>x.id===shareId);
+  if(!r){$('shareCard').innerHTML='<div class="empty">表示できるラウンドがありません</div>';return;}
+  const m=roundM(r),meta=[r.date,r.tournament,`${r.mode}H・${r.start}スタート`].filter(Boolean).map(esc).join('　・　');
+  let rows='';
+  m.ord.forEach((i,k)=>{const h=r.holes[i],hm=holeM(h);
+    if(hm.played||m.complete)rows+=`<tr><td class="hn">${h.n}</td><td>${h.par}</td><td>${hm.played?hm.st:'-'}</td><td class="rl ${relCls(hm.rel)}">${fmtRel(hm.rel)}</td><td>${hm.played?hm.putts:'-'}</td><td class="log">${chipsHtml(h.shots)}</td></tr>`;
+    if((k+1)%3===0){const b=m.blocks[(k+1)/3-1];if(b.n)rows+=`<tr class="sub"><td colspan="2">${b.label}</td><td>${b.st}</td><td class="rl">${fmtRel(b.rel)}</td><td>${b.pt}</td><td class="log">3H小計</td></tr>`;}
+    if(r.mode==='18'&&(k+1)%9===0){const hv=m.halves[(k+1)/9-1];if(hv.n)rows+=`<tr class="half"><td colspan="2">${hv.label}</td><td>${hv.st}</td><td>${fmtRel(hv.rel)}</td><td>${hv.pt}</td><td class="log">Par ${hv.par}${hv.n<9?`（${hv.n}H入力）`:''}</td></tr>`;}
+  });
+  $('shareCard').innerHTML=`
+  <div class="sc-head"><div><div class="sc-kicker">ROUND REPORT</div><div class="sc-course">${esc(r.course||'コース未入力')}</div><div class="sc-meta">${meta}${r.status!=='done'?'　・　<b>'+STATUS[r.status]+'</b>':''}</div></div>
+    <div class="sc-score"><div class="big">${m.st}</div><div class="rel ${relCls(m.rel)}">${fmtRel(m.rel)}</div></div></div>
+  <div class="kpis">
+    <div class="kpi"><small>パット</small><b>${m.putts}</b><i>平均 ${m.played?(m.putts/m.played).toFixed(2):'-'} /H</i></div>
+    <div class="kpi"><small>FWキープ率</small><b>${pct(m.fwRate)}</b><i>${m.fw}/${m.fwE}</i></div>
+    <div class="kpi"><small>パーオン率</small><b>${pct(m.girRate)}</b><i>${m.gir}/${m.played}</i></div>
+  </div>
+  <div class="blocks ${m.blocks.length===3?'b3':''}">${m.blocks.map(b=>`<div class="blk ${relCls(b.rel)}"><small>${b.label}</small><b>${fmtRel(b.rel)}</b></div>`).join('')}</div>
+  <table class="tbl"><thead><tr><th>H</th><th>Par</th><th>打数</th><th>±</th><th>PT</th><th style="text-align:left">ショット（クラブ→着弾点）</th></tr></thead><tbody>${rows}
+  <tr class="half"><td colspan="2">TOTAL</td><td>${m.st}</td><td>${fmtRel(m.rel)}</td><td>${m.putts}</td><td class="log">Par ${m.parPlayed}${m.complete?'':`（${m.played}/${m.total}H入力）`}</td></tr></tbody></table>
+  <div class="legend">±はPar対比（E＝Par）</div>`;
+}
+function loadScript(src){return new Promise((ok,ng)=>{if(window.html2canvas)return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ng;document.head.appendChild(s);});}
+async function saveImage(){
+  const r=rounds.find(x=>x.id===shareId);if(!r)return;
+  try{await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');}
+  catch(e){return toast('画像化を読み込めません（オフライン）。端末のスクリーンショットをご利用ください');}
+  const canvas=await html2canvas($('shareCard'),{scale:2,backgroundColor:'#ffffff'});
+  canvas.toBlob(async blob=>{const name=`round_${r.date||''}_${(r.course||'').replace(/[\\/:*?"<>|\s]/g,'')}.png`;
+    const file=new File([blob],name,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'ラウンドレポート'});return;}catch(e){if(e.name==='AbortError')return;}}
+    download(blob,name);},'image/png');
+}
+
+/* ===== エクスポート ===== */
+const RH=['RoundID','日付','ゴルフ場','大会','形式','スタート','状態'];
+const rBase=r=>[r.id,r.date,r.course,r.tournament,r.mode+'H',r.start,STATUS[r.status]];
+function roundRows(list){
+  const head=[...RH,'入力H数','打数','Par','Par対比','PT','PT/H','FWキープ','FW対象','FWキープ率%','パーオン','パーオン率%','3H-1','3H-2','3H-3','3H-4','3H-5','3H-6'];
+  return[head,...list.map(r=>{const m=roundM(r);const b=[0,1,2,3,4,5].map(i=>m.blocks[i]&&m.blocks[i].rel!=null?m.blocks[i].rel:'');
+    return[...rBase(r),m.played,m.st,m.parPlayed,m.rel??'',m.putts,m.played?+(m.putts/m.played).toFixed(2):'',m.fw,m.fwE,m.fwRate==null?'':+m.fwRate.toFixed(1),m.gir,m.girRate==null?'':+m.girRate.toFixed(1),...b];})];
+}
+function holeRows(list){
+  const out=[[...RH,'順','ホール','Par','打数','Par対比','PT','FWキープ','パーオン','ショット記録']];
+  list.forEach(r=>order(r).forEach((i,k)=>{const h=r.holes[i],hm=holeM(h);
+    out.push([...rBase(r),k+1,h.n,h.par,hm.played?hm.st:'',hm.rel??'',hm.played?hm.putts:'',hm.fwElig?(hm.fw?1:0):'',hm.played?(hm.gir?1:0):'',h.shots.map(s=>s.club+'→'+s.target).join(' / ')]);}));
+  return out;
+}
+function shotRows(list){
+  const out=[[...RH,'順','ホール','Par','打順','クラブ','着弾点']];
+  list.forEach(r=>order(r).forEach((i,k)=>{const h=r.holes[i];h.shots.forEach((s,j)=>out.push([...rBase(r),k+1,h.n,h.par,j+1,s.club,s.target]));}));
+  return out;
+}
+const toCSV=rows=>'\uFEFF'+rows.map(r=>r.map(v=>{v=String(v??'');return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\r\n');
+const toTSV=rows=>rows.map(r=>r.map(v=>String(v??'').replace(/[\t\r\n]/g,' ')).join('\t')).join('\n');
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
+const dlCSV=(rows,name)=>{download(new Blob([toCSV(rows)],{type:'text/csv;charset=utf-8'}),name);toast('CSVを出力しました');};
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);}
+  catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
+  toast('コピーしました。スプレッドシートのA1セルに貼り付けてください');
+}
+const validRounds=()=>rounds.filter(hasData).sort(byDate);
+
+/* ===== 通算分析 ===== */
+function renderStats(){
+  const all=validRounds(),courses=[...new Set(all.map(r=>r.course).filter(Boolean))];
+  const fv=$('stFilter').value;
+  $('stFilter').innerHTML=`<option value="">全ゴルフ場</option>`+courses.map(c=>`<option ${c===fv?'selected':''}>${esc(c)}</option>`).join('');
+  const rs=all.filter(r=>!fv||r.course===fv);
+  let played=0,putts=0,fwE=0,fw=0,gir=0;const cc={},tc={},mx={},c18=[],c9=[];
+  rs.forEach(r=>{const m=roundM(r);played+=m.played;putts+=m.putts;fwE+=m.fwE;fw+=m.fw;gir+=m.gir;
+    if(m.complete)(r.mode==='18'?c18:c9).push(m);
+    m.ord.forEach(i=>r.holes[i].shots.forEach(s=>{cc[s.club]=(cc[s.club]||0)+1;tc[s.target]=(tc[s.target]||0)+1;
+      if(!AUTO_PAIR.includes(s.club)&&!AUTO_PAIR.includes(s.target)){(mx[s.club]=mx[s.club]||{})[s.target]=(mx[s.club][s.target]||0)+1;}}));});
+  const avg=(a,f)=>a.length?a.reduce((x,y)=>x+f(y),0)/a.length:null;
+  const card=(t,v,sub)=>`<div class="kpi"><small>${t}</small><b>${v}</b><i>${sub}</i></div>`;
+  const a18=avg(c18,m=>m.st),a9=avg(c9,m=>m.st);
+  $('kpiGrid').innerHTML=[
+    card('ラウンド数',rs.length,`18H完走 ${c18.length}・9H完走 ${c9.length}`),
+    card('平均スコア 18H',a18==null?'--':a18.toFixed(1),a18==null?'対象なし':'Par対比 '+fmtRelF(avg(c18,m=>m.rel))),
+    card('平均スコア 9H',a9==null?'--':a9.toFixed(1),a9==null?'対象なし':'Par対比 '+fmtRelF(avg(c9,m=>m.rel))),
+    card('平均パット数',played?(putts/played*18).toFixed(1):'--',played?`18H換算／${(putts/played).toFixed(2)} PT/H`:'対象なし'),
+    card('FWキープ率 平均',pct(fwE?fw/fwE*100:null),`${fw}/${fwE} ホール`),
+    card('パーオン率 平均',pct(played?gir/played*100:null),`${gir}/${played} ホール`)].join('');
+  $('clubBars').innerHTML=bars(cc,S.clubs,'');
+  $('tgtBars').innerHTML=bars(tc,S.targets,'t');
+  const mc=[...S.clubs,...Object.keys(mx)].filter((c,i,a)=>mx[c]&&a.indexOf(c)===i);
+  const mt=[...S.targets,...Object.keys(tc)].filter((t,i,a)=>a.indexOf(t)===i&&mc.some(c=>mx[c][t]));
+  $('matrix').innerHTML=mc.length?`<table class="mx"><tr><th>クラブ</th>${mt.map(t=>`<th>${esc(t)}</th>`).join('')}<th>計</th></tr>${mc.map(c=>{const tot=Object.values(mx[c]).reduce((a,b)=>a+b,0);
+    return`<tr><th>${esc(c)}</th>${mt.map(t=>{const v=mx[c][t]||0,p=v/tot;return`<td style="background:rgba(108,181,138,${(p*0.55).toFixed(2)})">${v?`${v}<br><small>${Math.round(p*100)}%</small>`:''}</td>`;}).join('')}<td><b>${tot}</b></td></tr>`;}).join('')}</table>`:'<div class="empty">データがありません</div>';
+  $('histList').innerHTML=rs.length?rs.map(r=>{const m=roundM(r);return`<div class="hi"><div class="top"><div>
+    <div class="nm">${esc(r.course||'コース未入力')} <span class="badge ${r.status}">${STATUS[r.status]}</span></div>
+    <div class="mt2">${esc(r.date)}・${r.mode}H・${r.start}${r.tournament?'・'+esc(r.tournament):''}</div>
+    <div class="mt2">PT ${m.putts}｜FW ${pct(m.fwRate)}｜パーオン ${pct(m.girRate)}｜${m.played}/${m.total}H</div></div>
+    <div class="sc">${m.st}<div style="font-size:12px" class="${relCls(m.rel)}">${fmtRel(m.rel)}</div></div></div>
+    <div class="acts"><button type="button" class="btn sm soft" data-act="edit" data-id="${r.id}">✎ 編集</button><button type="button" class="btn sm blue" data-act="share" data-id="${r.id}">共有表示</button><button type="button" class="btn sm del" data-act="del" data-id="${r.id}">削除</button></div></div>`;}).join(''):'<div class="empty">保存済みラウンドはありません</div>';
+  renderTrend(rs);renderBk();
+}
+function renderTrend(rs){
+  const done=rs.filter(r=>roundM(r).complete).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.updatedAt-b.updatedAt).slice(-10);
+  if(!done.length){$('trendBox').innerHTML='<div class="empty">完走したラウンドがありません</div>';}
+  else{const ms=done.map(r=>({r,m:roundM(r)}));
+    const vals=ms.map(x=>x.r.mode==='9'?x.m.rel*2:x.m.rel);const mn=Math.min(0,...vals),mx=Math.max(...vals,1);
+    $('trendBox').innerHTML=`<div class="trend">${ms.map((x,i)=>{const h=8+((vals[i]-mn)/(mx-mn||1))*82;
+      return `<div class="col"><b class="${relCls(x.m.rel)}">${fmtRel(x.m.rel)}</b><i style="height:${h.toFixed(0)}%"></i></div>`;}).join('')}</div>
+      <div class="trend-x">${ms.map(x=>`<span>${esc((x.r.date||'').slice(5).replace('-','/'))}${x.r.mode==='9'?'(9H)':''}</span>`).join('')}</div>
+      <p class="note">棒の高さ＝Par対比（低いほど良い）。9Hは2倍換算で高さを表示。</p>`;}
+  const pa={3:[0,0],4:[0,0],5:[0,0]};
+  rs.forEach(r=>order(r).forEach(i=>{const h=r.holes[i],hm=holeM(h);if(hm.played&&pa[h.par]){pa[h.par][0]+=hm.st;pa[h.par][1]++;}}));
+  $('parGrid').innerHTML=[3,4,5].map(p=>{const[s,n]=pa[p];const a=n?s/n:null;
+    return `<div class="kpi"><small>Par${p}</small><b>${a==null?'--':a.toFixed(2)}</b><i>${a==null?'対象なし':'Par対比 '+fmtRelF(a-p)+'・'+n+'H'}</i></div>`;}).join('');
+  $('parNote').textContent='途中終了分も含む全入力ホールで計算。';
+}
+function renderBk(){const t=+localStorage.getItem(K.bk);
+  $('bkState').textContent=t?`最終バックアップ：${new Date(t).toLocaleString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'まだバックアップしていません';}
+function bars(counts,ord,cls){
+  const keys=[...ord.filter(k=>counts[k]),...Object.keys(counts).filter(k=>!ord.includes(k))];if(!keys.length)return'<div class="empty">データがありません</div>';
+  const tot=keys.reduce((a,k)=>a+counts[k],0),max=Math.max(...keys.map(k=>counts[k]));
+  return keys.map(k=>`<div class="bar ${cls}"><span class="bl">${esc(k)}</span><span class="bt"><i style="width:${(counts[k]/max*100).toFixed(1)}%"></i></span><span class="bv">${counts[k]}<small>${(counts[k]/tot*100).toFixed(1)}%</small></span></div>`).join('');
+}
+
+/* ===== 設定 ===== */
+const splitList=t=>t.split(/[,\n、，]/).map(s=>s.trim()).filter((s,i,a)=>s&&a.indexOf(s)===i);
+function openModal(){$('mClubs').value=S.clubs.join(', ');$('mTgts').value=S.targets.join(', ');$('mAuto').checked=S.autoPair;$('modal').hidden=false;}
+function saveModal(){const c=splitList($('mClubs').value),t=splitList($('mTgts').value);
+  if(!c.length||!t.length)return toast('クラブと着弾点は1つ以上必要です');
+  Object.assign(S,{clubs:c,targets:t,autoPair:$('mAuto').checked});
+  saveJSON(K.set,S);$('modal').hidden=true;
+  renderAll();toast('設定を保存しました');}
+
+/* ===== 画面切替・イベント ===== */
+function switchTab(t){tab=t;['input','share','stats'].forEach(x=>$('view-'+x).hidden=x!==t);
+  [...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  if(t==='share')renderShare();if(t==='stats')renderStats();window.scrollTo({top:0});}
+function renderAll(){renderInfo();renderStrip();renderHole();if(tab==='share')renderShare();if(tab==='stats')renderStats();}
+
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchTab(b.dataset.tab);});
+[['fDate','date'],['fCourse','course'],['fTour','tournament']].forEach(([id,k])=>{
+  $(id).addEventListener('input',e=>{cur[k]=e.target.value;saveCur();});});
+$('fCourse').addEventListener('change',applyCoursePars);
+$('segMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;cur.mode=b.dataset.v;resetPal();renderInfo();afterChange();});
+$('segStart').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;cur.start=b.dataset.v;holeIdx=firstOpen(cur);resetPal();renderInfo();afterChange();});
+$('segPar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;cur.holes[holeIdx].par=+b.dataset.v;afterChange();});
+$('strip').addEventListener('click',e=>{const b=e.target.closest('.hb');if(b)selectHole(+b.dataset.h);});
+$('shotList').addEventListener('click',e=>{const b=e.target.closest('.shot');if(!b)return;const i=+b.dataset.i;
+  editIdx=editIdx===i?-1:i;insertAt=-1;pend={club:null,target:null};renderHole();});
+$('clubBtns').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b)onClub(b.dataset.c);});
+$('tgtBtns').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b)onTarget(b.dataset.t);});
+$('eUp').addEventListener('click',()=>{const s=cur.holes[holeIdx].shots;if(editIdx>0){[s[editIdx-1],s[editIdx]]=[s[editIdx],s[editIdx-1]];editIdx--;afterChange();}});
+$('eDown').addEventListener('click',()=>{const s=cur.holes[holeIdx].shots;if(editIdx>=0&&editIdx<s.length-1){[s[editIdx+1],s[editIdx]]=[s[editIdx],s[editIdx+1]];editIdx++;afterChange();}});
+$('eIns').addEventListener('click',()=>{insertAt=editIdx;editIdx=-1;pend={club:null,target:null};renderHole();});
+$('eDel').addEventListener('click',()=>{cur.holes[holeIdx].shots.splice(editIdx,1);editIdx=-1;afterChange();});
+$('eDone').addEventListener('click',()=>{editIdx=-1;renderHole();});
+$('btnCancelIns').addEventListener('click',()=>{insertAt=-1;pend={club:null,target:null};renderHole();});
+$('btnPrev').addEventListener('click',()=>navHole(-1));
+$('btnNext').addEventListener('click',()=>navHole(1));
+$('btnFinish').addEventListener('click',finishRound);
+$('btnSettings').addEventListener('click',openModal);
+$('mClose').addEventListener('click',()=>$('modal').hidden=true);
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').hidden=true;});
+$('mSave').addEventListener('click',saveModal);
+$('mReset').addEventListener('click',()=>{$('mClubs').value=DEF_CLUBS.join(', ');$('mTgts').value=DEF_TARGETS.join(', ');});
+$('shareSel').addEventListener('change',e=>{shareId=e.target.value;renderShare();});
+$('btnImg').addEventListener('click',saveImage);
+$('btnEditShare').addEventListener('click',()=>shareId&&loadRound(shareId));
+$('btnCsvOne').addEventListener('click',()=>{const r=rounds.find(x=>x.id===shareId);if(r)dlCSV(holeRows([r]),`golf_${r.date}_holes.csv`);});
+$('stFilter').addEventListener('change',renderStats);
+$('histList').addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;const id=b.dataset.id;
+  if(b.dataset.act==='edit')loadRound(id);
+  if(b.dataset.act==='share'){shareId=id;switchTab('share');}
+  if(b.dataset.act==='del')ask('ラウンド削除','このラウンドを削除しますか？元に戻せません。',[{label:'削除する',cls:'del',value:'ok'},{label:'キャンセル',value:null}]).then(v=>{
+    if(v!=='ok')return;
+    rounds=rounds.filter(r=>r.id!==id);saveRounds();
+    if(cur.id===id){cur=newRound();holeIdx=order(cur)[0];resetPal();localStorage.setItem(K.cur,cur.id);}renderAll();toast('削除しました');});});
+$('btnCsvRounds').addEventListener('click',()=>dlCSV(roundRows(validRounds()),`golf_rounds_${today()}.csv`));
+$('btnCsvShots').addEventListener('click',()=>dlCSV(shotRows(validRounds()),`golf_shots_${today()}.csv`));
+$('btnBackup').addEventListener('click',()=>{download(new Blob([JSON.stringify({version:3,settings:S,rounds},null,1)],{type:'application/json'}),`golf_backup_${today()}.json`);localStorage.setItem(K.bk,String(Date.now()));renderBk();});
+$('btnRestore').addEventListener('click',()=>$('fileRestore').click());
+$('fileRestore').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
+  try{const j=JSON.parse(await f.text());const n=mergeRounds(Array.isArray(j)?j:(j.rounds||[]));toast(`復元しました（新規・更新 ${n}件）`);renderAll();}
+  catch(err){toast('ファイルを読み込めませんでした');}e.target.value='';});
+
+/* 新ラウンド・ダイアログ */
+$('btnAbort').addEventListener('click',abortRound);
+$('btnNew').addEventListener('click',newRoundFlow);
+$('nClose').addEventListener('click',()=>$('newModal').hidden=true);
+$('nGo').addEventListener('click',startNewRound);
+$('nMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;nState.mode=b.dataset.v;setSeg('nMode',nState.mode);});
+$('nStart').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;nState.start=b.dataset.v;setSeg('nStart',nState.start);});
+$('nResume').addEventListener('click',e=>{const b=e.target.closest('.rs-item');if(b)resumeRound(b.dataset.id);});
+/* 端末内データの保持をブラウザに要求（対応端末のみ） */
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+renderAll();
+</script>
+</body>
+</html>
