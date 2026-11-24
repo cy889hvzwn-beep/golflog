@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Golf Log">
-<title>Golf Round Log v5</title>
+<title>Golf Round Log v7</title>
 <style>
 :root{--bg:#f5f8f4;--card:#fff;--line:#e2ebe3;--text:#3b4842;--sub:#7d8c85;--g:#6cb58a;--gd:#3f8a5f;--gl:#e7f4eb;--b:#6fa8d6;--bl:#e6f1fb;--pink:#fbe5e9;--org:#fdf1de}
 *{box-sizing:border-box}
@@ -165,13 +165,17 @@ details.rule li{margin:2px 0}
 .newbar .btn{flex:1;padding:14px;font-size:16px}
 .bk-alert{background:#fff4e5;border:1px solid #f3c98b;color:#8a5300;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .kgrid4{grid-template-columns:repeat(2,1fr)}
+.role-bar{border-radius:12px;padding:9px 12px;font-size:13px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.role-input{background:#eef4ff;border:1px solid #b9cdf3;color:#244a8f}
+.role-view{background:#f3f0fa;border:1px solid #cfc3ea;color:#4b3b7a}
+.badge.unsent{background:#fff1e0;color:#a35a00}
 .sec-h{font-size:13px;font-weight:700;color:var(--sub);margin:16px 2px 6px}
 </style>
 </head>
 <body>
 <header>
   <div class="hwrap">
-    <div class="logo">⛳ Golf Log <span class="sync" id="saveBadge">v5</span></div>
+    <div class="logo">⛳ Golf Log <span class="sync" id="saveBadge">v6</span></div>
     <nav class="tabs" id="tabs">
       <button type="button" data-tab="input" class="on">入力</button>
       <button type="button" data-tab="share">コーチ共有</button>
@@ -183,6 +187,7 @@ details.rule li{margin:2px 0}
 <main>
 <!-- ================= 入力 ================= -->
 <section id="view-input">
+  <div class="role-bar role-input" id="roleBarIn" hidden><span id="roleBarInMsg"></span><span class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="btn sm" id="btnResend">全件再送</button><button type="button" class="btn sm pri" id="btnSendTop">親機へ送る</button></span></div>
   <div class="newbar">
     <button type="button" class="btn pri" id="btnNew">＋ 新しいラウンド</button>
     <button type="button" class="btn warn" id="btnAbort" style="flex:0 0 auto">ラウンド中止</button>
@@ -294,18 +299,21 @@ details.rule li{margin:2px 0}
   <div class="card"><div class="ttl">クラブ別 着弾傾向</div><div class="scroll" id="matrix"></div></div>
   <div class="card"><div class="ttl">保存済みラウンド</div><div class="hist" id="histList"></div></div>
   <div class="card">
-    <div class="ttl">データ管理（この端末のみ）</div>
-    <div class="row">
-      <button class="btn pri sm" id="btnBackup" type="button">💾 バックアップ保存(JSON)</button>
-      <button class="btn sm" id="btnRestore" type="button">復元(JSON)</button>
-      <input type="file" id="fileRestore" accept=".json,application/json" hidden>
+    <div class="ttl">データ管理</div>
+    <div class="row mt">
+      <button class="btn pri sm" id="btnImport" type="button">📥 奥さまから届いたファイルを取り込む</button>
+      <input type="file" id="fileImport" accept=".json,application/json" hidden>
+    </div>
+    <div class="row mt" id="dmBk">
+      <button class="btn sm" id="btnBackup" type="button">💾 バックアップ保存(JSON)</button>
     </div>
     <div class="row mt">
       <button class="btn sm" id="btnCsvRounds" type="button">CSV：ラウンド集計</button>
       <button class="btn sm" id="btnCsvShots" type="button">CSV：ショット明細</button>
     </div>
     <p class="note" id="bkState"></p>
-    <p class="note">データはこのiPhoneのブラウザ内にだけ保存されます（通信不要）。ブラウザのデータ消去・機種変更に備え、月1回程度「バックアップ保存」でファイルアプリ等へ保存してください。</p>
+    <p class="note" id="dmNote"></p>
+    <div class="row mt"><button class="btn sm" id="btnRoleSet" type="button">⚙ 端末の役割・設定</button></div>
   </div>
 </section>
 </main>
@@ -314,6 +322,9 @@ details.rule li{margin:2px 0}
 <div class="modal" id="modal" hidden>
   <div class="mbox">
     <div class="ttl" style="font-size:15px"><span>ボタン編集・設定</span><button type="button" class="btn sm" id="mClose">✕</button></div>
+    <label class="f">この端末の役割</label>
+    <div class="seg" id="mRole"><button type="button" data-v="main">親機</button><button type="button" data-v="input">入力専用</button></div>
+    <p class="note" style="margin:6px 0 12px">親機＝滝口さん（入力・分析・共有・バックアップ）／入力専用＝奥さま（入力して親機へ送るだけ）</p>
     <label class="f" for="mClubs">使用クラブ（カンマまたは改行区切り・並び順＝ボタン順）</label>
     <textarea class="in" id="mClubs" rows="3"></textarea>
     <label class="f mt" for="mTgts">着弾点（カンマまたは改行区切り）</label>
@@ -363,7 +374,8 @@ details.rule li{margin:2px 0}
 const DEF_CLUBS=["1W","3W","5W","4U","5U","5I","6I","7I","8I","9I","P","52","58","PT","ﾍﾟﾅ"];
 const DEF_TARGETS=["FW","右","左","前","奥","OB","池","砂","ﾊﾟｰｵﾝ","ｵﾝ","PT","ﾍﾟﾅ"];
 const AUTO_PAIR=["PT","ﾍﾟﾅ"];
-const K={rounds:'glog_rounds_v1',cur:'glog_current_id_v1',set:'glog_settings_v1',bk:'glog_last_backup_v1'};
+const K={rounds:'glog_rounds_v1',cur:'glog_current_id_v1',set:'glog_settings_v1',bk:'glog_last_backup_v1',sent:'glog_sent_v1',recv:'glog_last_recv_v1'};
+const ROLE_NM={main:'親機',input:'入力専用'};
 ['glog_sync_queue_v1','glog_sync_dels_v1','glog_last_sync_v1'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}}); // 旧・同期用データを掃除
 const STATUS={playing:'入力中',done:'完了',aborted:'途中終了'};
 const $=id=>document.getElementById(id);
@@ -381,7 +393,7 @@ let toastTimer=null;
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);}
 
 /* ===== データモデル ===== */
-function newRound(){return{id:uid(),date:today(),course:'',tournament:'',mode:'18',start:'OUT',status:'playing',
+function newRound(){return{id:uid(),by:'',date:today(),course:'',tournament:'',mode:'18',start:'OUT',status:'playing',
   holes:Array.from({length:18},(_,i)=>({n:i+1,par:4,shots:[]})),createdAt:Date.now(),updatedAt:Date.now()};}
 function normalizeRound(r){
   r=r||{};const o=newRound();
@@ -392,6 +404,7 @@ function normalizeRound(r){
   o.holes=Array.from({length:18},(_,i)=>{const h=(r.holes||[])[i]||{};const p=+h.par;
     return{n:i+1,par:[3,4,5,6].includes(p)?p:4,shots:(h.shots||[]).map(s=>({club:String(s.club??''),target:String(s.target??'')}))};});
   o.createdAt=+r.createdAt||Date.now();o.updatedAt=+r.updatedAt||o.createdAt;
+  o.by=String(r.by||'');
   return o;
 }
 const order=r=>{const out=[0,1,2,3,4,5,6,7,8],inn=[9,10,11,12,13,14,15,16,17];
@@ -428,13 +441,18 @@ function roundM(r){
 /* ===== 状態 ===== */
 let S=Object.assign({clubs:[...DEF_CLUBS],targets:[...DEF_TARGETS],autoPair:true},loadJSON(K.set,{}));
 delete S.gasUrl;delete S.gasToken;
+if(!ROLE_NM[S.role])S.role='main';
+const role=()=>S.role;
+let sentMap=loadJSON(K.sent,{})||{};
+const isUnsent=r=>role()==='input'&&r.status!=='playing'&&hasData(r)&&sentMap[r.id]!==r.updatedAt;
+const unsentList=()=>rounds.filter(isUnsent);
 let rounds=(loadJSON(K.rounds,[])||[]).map(normalizeRound);
 let cur=rounds.find(r=>r.id===localStorage.getItem(K.cur)&&r.status==='playing')||newRound();
 let holeIdx=firstOpen(cur),editIdx=-1,insertAt=-1,pend={club:null,target:null},shareId=null,tab='input';
 
 function firstOpen(r){const o=order(r);return o.find(i=>!r.holes[i].shots.length)??o[o.length-1];}
 function saveRounds(){saveJSON(K.rounds,rounds);}
-function saveCur(){cur.updatedAt=Date.now();const i=rounds.findIndex(r=>r.id===cur.id);
+function saveCur(){cur.updatedAt=Date.now();if(!cur.by)cur.by=ROLE_NM[S.role]||'';const i=rounds.findIndex(r=>r.id===cur.id);
   if(i>=0)rounds[i]=cur;else if(hasData(cur))rounds.push(cur);saveRounds();localStorage.setItem(K.cur,cur.id);}
 function resetPal(){editIdx=-1;insertAt=-1;pend={club:null,target:null};}
 
@@ -453,6 +471,50 @@ function ask(title,msg,buttons){
 function closeDlg(v){$('dlg').hidden=true;const r=dlgResolve;dlgResolve=null;if(r)r(v);}
 function mergeRounds(list){let n=0;list.map(normalizeRound).forEach(x=>{const i=rounds.findIndex(r=>r.id===x.id);
   if(i<0){rounds.push(x);n++;}else if(x.updatedAt>rounds[i].updatedAt){if(rounds[i].id===cur.id)cur=x;rounds[i]=x;n++;}});saveRounds();return n;}
+
+/* ===== 端末の役割・受け渡し ===== */
+function fmtDT(t){return new Date(t).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+function renderRole(){
+  const r=role(),un=unsentList().length,inp=r==='input';
+  $('saveBadge').textContent='v7・'+ROLE_NM[r];
+  ['share','stats'].forEach(t=>document.querySelector(`#tabs [data-tab="${t}"]`).hidden=inp);
+  $('roleBarIn').hidden=!inp;
+  $('roleBarInMsg').textContent=un?`未送信 ${un}件`:(validRounds().length?'すべて送信済み':'記録はまだありません');
+  $('btnSendTop').disabled=!un;$('btnResend').hidden=!validRounds().length;
+  $('dmNote').textContent='奥さまから届いたファイルは「取り込む」で追加されます。同じラウンドを2回取り込んでも重複しません（内容が違えば新しい方を残します）。';
+}
+async function shareJSON(obj,name,title){
+  const blob=new Blob([JSON.stringify(obj)],{type:'application/json'});
+  try{const file=new File([blob],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title});return true;}}
+  catch(e){if(e.name==='AbortError')return false;}
+  download(blob,name);toast('ファイルを保存しました。ファイルアプリから送ってください');return true;
+}
+const stamp=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;};
+async function sendUnsent(all){
+  const list=all===true?validRounds():unsentList();if(!list.length)return toast('送るラウンドはありません');
+  const ok=await shareJSON({app:'golflog',kind:'rounds',from:'input',createdAt:Date.now(),rounds:list},`golf_send_${stamp()}_${list.length}R.json`,'ゴルフ記録（'+list.length+'ラウンド）');
+  if(!ok)return;
+  const v=await ask('送信の確認',`滝口さんへ${list.length}件を送れましたか？\n「送れた」を選ぶと未送信の印が消えます（記録はこの端末にも残ります）。`,[{label:'送れた',cls:'pri',value:'ok'},{label:'まだ（印を残す）',value:null}]);
+  if(v!=='ok')return;
+  list.forEach(r=>sentMap[r.id]=r.updatedAt);saveJSON(K.sent,sentMap);renderAll();toast('送信済みにしました');
+}
+function diffRounds(list){let add=0,upd=0,same=0;list.forEach(x=>{const r=rounds.find(y=>y.id===x.id);if(!r)add++;else if(x.updatedAt>r.updatedAt)upd++;else same++;});return{add,upd,same};}
+async function importFile(f){
+  let j;try{j=JSON.parse(await f.text());}catch(e){return toast('ファイルを読み込めませんでした');}
+  const list=(Array.isArray(j)?j:(j.rounds||[])).map(normalizeRound).filter(hasData);
+  if(!list.length)return toast('取り込めるラウンドがありません');
+  {
+    const d=diffRounds(list);
+    const v=await ask('データの取り込み',`新規 ${d.add}件／更新 ${d.upd}件／変更なし ${d.same}件\n今のデータに追加・統合します（削除はしません）。`,[{label:'取り込む',cls:'pri',value:'ok'},{label:'キャンセル',value:null}]);
+    if(v!=='ok')return;
+    mergeRounds(list);
+    if(role()==='input')list.forEach(x=>{const r=rounds.find(y=>y.id===x.id);if(r)sentMap[r.id]=r.updatedAt;});saveJSON(K.sent,sentMap);
+  }
+  if(!rounds.some(r=>r.id===cur.id)||cur.status!=='playing'){const c=rounds.find(r=>r.id===cur.id&&r.status==='playing');if(!c)blankCur();}
+  localStorage.setItem(K.recv,String(Date.now()));
+  renderAll();toast('取り込みました');
+}
 
 /* ===== 入力画面 ===== */
 function setSeg(id,v){[...$(id).children].forEach(b=>b.classList.toggle('on',b.dataset.v===String(v)));}
@@ -523,7 +585,8 @@ async function finishRound(){
     const v=await ask('ラウンド完了',`未入力のホールが${m.total-m.played}ホールあります。\nこのまま完了にしますか？`,
       [{label:'完了にする',cls:'pri',value:'ok'},{label:'入力に戻る',value:null}]);
     if(v!=='ok')return;}
-  cur.status='done';saveCur();shareId=cur.id;blankCur();renderAll();switchTab('share');toast('ラウンドを保存しました。入力画面は新しいラウンド用に空にしました');
+  cur.status='done';saveCur();shareId=cur.id;blankCur();renderAll();switchTab(role()==='input'?'input':'share');toast('ラウンドを保存しました。入力画面は新しいラウンド用に空にしました');
+  if(role()==='input')setTimeout(async()=>{const v=await ask('親機へ送る','このラウンドを滝口さんへ送りますか？\n（LINE・メールなどを選んでください。遠征中は「あとで」にして、夜にまとめて送ってもOKです）',[{label:'今すぐ送る',cls:'pri',value:'ok'},{label:'あとで',value:null}]);if(v==='ok')sendUnsent();},300);
 }
 /* ===== 新しいラウンド／中止 ===== */
 const hasShots=r=>r.holes.some(h=>h.shots.length);
@@ -683,8 +746,8 @@ function renderStats(){
   $('matrix').innerHTML=mc.length?`<table class="mx"><tr><th>クラブ</th>${mt.map(t=>`<th>${esc(t)}</th>`).join('')}<th>計</th></tr>${mc.map(c=>{const tot=Object.values(mx[c]).reduce((a,b)=>a+b,0);
     return`<tr><th>${esc(c)}</th>${mt.map(t=>{const v=mx[c][t]||0,p=v/tot;return`<td style="background:rgba(108,181,138,${(p*0.55).toFixed(2)})">${v?`${v}<br><small>${Math.round(p*100)}%</small>`:''}</td>`;}).join('')}<td><b>${tot}</b></td></tr>`;}).join('')}</table>`:'<div class="empty">データがありません</div>';
   $('histList').innerHTML=rs.length?rs.map(r=>{const m=roundM(r);return`<div class="hi"><div class="top"><div>
-    <div class="nm">${esc(r.course||'コース未入力')} <span class="badge ${r.status}">${STATUS[r.status]}</span></div>
-    <div class="mt2">${esc(r.date)}・${r.mode}H・${r.start}${r.tournament?'・'+esc(r.tournament):''}</div>
+    <div class="nm">${esc(r.course||'コース未入力')} <span class="badge ${r.status}">${STATUS[r.status]}</span>${isUnsent(r)?' <span class="badge unsent">未送信</span>':''}</div>
+    <div class="mt2">${esc(r.date)}・${r.mode}H・${r.start}${r.tournament?'・'+esc(r.tournament):''}${r.by==='入力用'?'・入力用端末で入力':''}</div>
     <div class="mt2">PT ${m.putts}｜FW ${pct(m.fwRate)}｜パーオン ${pct(m.girRate)}｜${m.played}/${m.total}H</div></div>
     <div class="sc">${m.st}<div style="font-size:12px" class="${relCls(m.rel)}">${fmtRel(m.rel)}</div></div></div>
     <div class="acts"><button type="button" class="btn sm soft" data-act="edit" data-id="${r.id}">✎ 編集</button><button type="button" class="btn sm blue" data-act="share" data-id="${r.id}">共有表示</button><button type="button" class="btn sm del" data-act="del" data-id="${r.id}">削除</button></div></div>`;}).join(''):'<div class="empty">保存済みラウンドはありません</div>';
@@ -721,7 +784,7 @@ function renderPutt(rs){
 }
 function renderBk(){const t=+localStorage.getItem(K.bk);
   const days=t?Math.floor((Date.now()-t)/864e5):null,need=validRounds().length>0&&(days==null||days>=30);
-  $('bkAlert').hidden=!need;
+  $('bkAlert').hidden=!need||role()!=='main';renderRole();
   if(need)$('bkAlertMsg').textContent=days==null?'まだバックアップがありません。ファイルアプリに保存してください。':`前回のバックアップから${days}日経過しています。`;
   $('bkState').textContent=t?`最終バックアップ：${new Date(t).toLocaleString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'まだバックアップしていません';}
 function bars(counts,ord,cls){
@@ -732,18 +795,20 @@ function bars(counts,ord,cls){
 
 /* ===== 設定 ===== */
 const splitList=t=>t.split(/[,\n、，]/).map(s=>s.trim()).filter((s,i,a)=>s&&a.indexOf(s)===i);
-function openModal(){$('mClubs').value=S.clubs.join(', ');$('mTgts').value=S.targets.join(', ');$('mAuto').checked=S.autoPair;$('modal').hidden=false;}
+function openModal(){mRole=S.role;setSeg('mRole',mRole);$('mClubs').value=S.clubs.join(', ');$('mTgts').value=S.targets.join(', ');$('mAuto').checked=S.autoPair;$('modal').hidden=false;}
+let mRole='main';
 function saveModal(){const c=splitList($('mClubs').value),t=splitList($('mTgts').value);
   if(!c.length||!t.length)return toast('クラブと着弾点は1つ以上必要です');
-  Object.assign(S,{clubs:c,targets:t,autoPair:$('mAuto').checked});
+  Object.assign(S,{clubs:c,targets:t,autoPair:$('mAuto').checked,role:mRole});
+  if(mRole==='input')tab='input';
   saveJSON(K.set,S);$('modal').hidden=true;
-  renderAll();toast('設定を保存しました');}
+  renderAll();switchTab(tab);toast('設定を保存しました');}
 
 /* ===== 画面切替・イベント ===== */
 function switchTab(t){tab=t;['input','share','stats'].forEach(x=>$('view-'+x).hidden=x!==t);
   [...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   if(t==='share')renderShare();if(t==='stats')renderStats();window.scrollTo({top:0});}
-function renderAll(){renderInfo();renderStrip();renderHole();if(tab==='share')renderShare();if(tab==='stats')renderStats();}
+function renderAll(){renderRole();renderInfo();renderStrip();renderHole();if(tab==='share')renderShare();if(tab==='stats')renderStats();}
 
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchTab(b.dataset.tab);});
 [['fDate','date'],['fCourse','course'],['fTour','tournament']].forEach(([id,k])=>{
@@ -785,11 +850,13 @@ $('histList').addEventListener('click',e=>{const b=e.target.closest('button[data
 $('btnCsvRounds').addEventListener('click',()=>dlCSV(roundRows(validRounds()),`golf_rounds_${today()}.csv`));
 $('btnCsvShots').addEventListener('click',()=>dlCSV(shotRows(validRounds()),`golf_shots_${today()}.csv`));
 $('btnBackup2').addEventListener('click',()=>$('btnBackup').click());
-$('btnBackup').addEventListener('click',()=>{download(new Blob([JSON.stringify({version:3,settings:S,rounds},null,1)],{type:'application/json'}),`golf_backup_${today()}.json`);localStorage.setItem(K.bk,String(Date.now()));renderBk();});
-$('btnRestore').addEventListener('click',()=>$('fileRestore').click());
-$('fileRestore').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
-  try{const j=JSON.parse(await f.text());const n=mergeRounds(Array.isArray(j)?j:(j.rounds||[]));toast(`復元しました（新規・更新 ${n}件）`);renderAll();}
-  catch(err){toast('ファイルを読み込めませんでした');}e.target.value='';});
+$('btnBackup').addEventListener('click',()=>{download(new Blob([JSON.stringify({app:'golflog',kind:'backup',version:6,settings:S,rounds},null,1)],{type:'application/json'}),`golf_backup_${today()}.json`);localStorage.setItem(K.bk,String(Date.now()));renderBk();});
+$('btnImport').addEventListener('click',()=>$('fileImport').click());
+$('fileImport').addEventListener('change',async e=>{const f=e.target.files[0];if(f)await importFile(f);e.target.value='';});
+$('btnSendTop').addEventListener('click',()=>sendUnsent());
+$('btnResend').addEventListener('click',async()=>{const v=await ask('全件再送',`この端末の全${validRounds().length}件を送ります。\n滝口さん側では重複せずにまとまります。`,[{label:'送る',cls:'pri',value:'ok'},{label:'キャンセル',value:null}]);if(v==='ok')sendUnsent(true);});
+$('btnRoleSet').addEventListener('click',openModal);
+$('mRole').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;mRole=b.dataset.v;setSeg('mRole',mRole);});
 
 /* 新ラウンド・ダイアログ */
 $('btnAbort').addEventListener('click',abortRound);
@@ -801,7 +868,7 @@ $('nStart').addEventListener('click',e=>{const b=e.target.closest('button');if(!
 $('nResume').addEventListener('click',e=>{const b=e.target.closest('.rs-item');if(b)resumeRound(b.dataset.id);});
 /* 端末内データの保持をブラウザに要求（対応端末のみ） */
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
-renderAll();
+renderAll();if(role()==='input')switchTab('input');
 </script>
 </body>
 </html>
