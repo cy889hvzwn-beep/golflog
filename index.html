@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Golf Log">
-<title>Golf Round Log v4</title>
+<title>Golf Round Log v5</title>
 <style>
 :root{--bg:#f5f8f4;--card:#fff;--line:#e2ebe3;--text:#3b4842;--sub:#7d8c85;--g:#6cb58a;--gd:#3f8a5f;--gl:#e7f4eb;--b:#6fa8d6;--bl:#e6f1fb;--pink:#fbe5e9;--org:#fdf1de}
 *{box-sizing:border-box}
@@ -163,12 +163,15 @@ details.rule li{margin:2px 0}
 .mbox .seg button{padding:9px 14px}
 .newbar{display:flex;gap:8px;margin-bottom:12px}
 .newbar .btn{flex:1;padding:14px;font-size:16px}
+.bk-alert{background:#fff4e5;border:1px solid #f3c98b;color:#8a5300;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kgrid4{grid-template-columns:repeat(2,1fr)}
+.sec-h{font-size:13px;font-weight:700;color:var(--sub);margin:16px 2px 6px}
 </style>
 </head>
 <body>
 <header>
   <div class="hwrap">
-    <div class="logo">⛳ Golf Log <span class="sync" id="saveBadge">v4</span></div>
+    <div class="logo">⛳ Golf Log <span class="sync" id="saveBadge">v5</span></div>
     <nav class="tabs" id="tabs">
       <button type="button" data-tab="input" class="on">入力</button>
       <button type="button" data-tab="share">コーチ共有</button>
@@ -251,7 +254,6 @@ details.rule li{margin:2px 0}
     <label class="f" for="shareSel">表示するラウンド</label><select class="in" id="shareSel"></select>
     <div class="row mt">
       <button type="button" class="btn pri sm" id="btnImg">📷 画像で保存／送信</button>
-      <button type="button" class="btn sm" id="btnCsvOne">CSV出力</button>
       <button type="button" class="btn soft sm" id="btnEditShare">✎ このラウンドを編集</button>
     </div>
   </div>
@@ -260,6 +262,7 @@ details.rule li{margin:2px 0}
 
 <!-- ================= 分析 ================= -->
 <section id="view-stats" hidden>
+  <div class="bk-alert" id="bkAlert" hidden><span id="bkAlertMsg"></span><button type="button" class="btn sm pri" id="btnBackup2">今すぐ保存</button></div>
   <div class="card">
     <div class="ttl"><span>通算分析</span>
       <div class="row"><select class="in" id="stFilter" style="width:auto;font-size:13px;padding:6px 8px;min-height:0"></select></div></div>
@@ -267,6 +270,8 @@ details.rule li{margin:2px 0}
     <details class="rule"><summary>ⓘ 集計ルール</summary><ul>
       <li>打数＝記録したショット数（ﾍﾟﾅも1打として加算）。Par対比は入力済みホールのみで計算。</li>
       <li>PT＝クラブまたは着弾点が「PT」のショット数。</li>
+      <li>ショット分析（クラブ使用頻度・着弾点分布・クラブ別着弾傾向）はPT・ﾍﾟﾅを除いて集計。</li>
+      <li>パット分析：1パット率・3パット以上率は入力済みホールに対する割合。パーオン時／パーオン外の平均パットはホール単位の平均。</li>
       <li>FWキープ率＝Par4・5のティーショット着弾点が「FW」の割合。</li>
       <li>パーオン率＝「ﾊﾟｰｵﾝ」を選択、または「ｵﾝ」／パット開始までの打数が Par−2 以内のホールの割合。</li>
       <li>平均スコアは全ホール入力済みのラウンドのみ（18H・9H別）。FW・パーオン・PTは途中終了分も含む全入力ホールで計算。</li>
@@ -276,11 +281,17 @@ details.rule li{margin:2px 0}
     <div class="card"><div class="ttl">スコア推移（直近10ラウンド・完走分）</div><div id="trendBox"></div></div>
     <div class="card"><div class="ttl">Par別 平均スコア</div><div class="kgrid" id="parGrid" style="grid-template-columns:repeat(3,1fr)"></div><p class="note" id="parNote"></p></div>
   </div>
+  <div class="sec-h">パット分析</div>
+  <div class="two">
+    <div class="card"><div class="ttl">パット指標</div><div class="kgrid kgrid4" id="puttGrid"></div></div>
+    <div class="card"><div class="ttl">1ホールあたりのパット数</div><div id="puttBars"></div></div>
+  </div>
+  <div class="sec-h">ショット分析（PT・ﾍﾟﾅ除く）</div>
   <div class="two">
     <div class="card"><div class="ttl">クラブ使用頻度</div><div id="clubBars"></div></div>
     <div class="card"><div class="ttl">着弾点分布</div><div id="tgtBars"></div></div>
   </div>
-  <div class="card"><div class="ttl">クラブ別 着弾傾向（PT・ﾍﾟﾅ除く）</div><div class="scroll" id="matrix"></div></div>
+  <div class="card"><div class="ttl">クラブ別 着弾傾向</div><div class="scroll" id="matrix"></div></div>
   <div class="card"><div class="ttl">保存済みラウンド</div><div class="hist" id="histList"></div></div>
   <div class="card">
     <div class="ttl">データ管理（この端末のみ）</div>
@@ -520,7 +531,6 @@ const isLive=()=>cur.status==='playing'&&hasShots(cur);
 function dropEmptyCur(){if(cur.status==='playing'&&!hasShots(cur)&&rounds.some(r=>r.id===cur.id)){rounds=rounds.filter(r=>r.id!==cur.id);saveRounds();}}
 function blankCur(){cur=newRound();holeIdx=order(cur)[0];resetPal();localStorage.setItem(K.cur,cur.id);}
 function updAbortBtn(){$('btnAbort').hidden=!isLive();$('btnFinish').hidden=cur.status==='done';}
-/* 入力中のラウンドを閉じる。戻り値 false＝キャンセル */
 async function closeLive(title){
   const m=roundM(cur);
   const v=await ask(title,`${cur.course||'コース未入力'}（${m.played}/${m.total}H入力済み）を入力中です。\n入力済みのデータをどうしますか？`,
@@ -533,7 +543,6 @@ async function closeLive(title){
   }else{cur.status=m.complete?'done':'aborted';saveCur();toast('途中終了として保存しました');}
   return true;
 }
-/* ＋新しいラウンド：どの状態からでも空の入力画面＋開始画面へ */
 async function newRoundFlow(){
   if(isLive()&&!(await closeLive('新しいラウンド')))return;
   dropEmptyCur();blankCur();renderAll();switchTab('input');openNewModal();
@@ -654,8 +663,8 @@ function renderStats(){
   let played=0,putts=0,fwE=0,fw=0,gir=0;const cc={},tc={},mx={},c18=[],c9=[];
   rs.forEach(r=>{const m=roundM(r);played+=m.played;putts+=m.putts;fwE+=m.fwE;fw+=m.fw;gir+=m.gir;
     if(m.complete)(r.mode==='18'?c18:c9).push(m);
-    m.ord.forEach(i=>r.holes[i].shots.forEach(s=>{cc[s.club]=(cc[s.club]||0)+1;tc[s.target]=(tc[s.target]||0)+1;
-      if(!AUTO_PAIR.includes(s.club)&&!AUTO_PAIR.includes(s.target)){(mx[s.club]=mx[s.club]||{})[s.target]=(mx[s.club][s.target]||0)+1;}}));});
+    m.ord.forEach(i=>r.holes[i].shots.forEach(s=>{if(AUTO_PAIR.includes(s.club)||AUTO_PAIR.includes(s.target))return;
+      cc[s.club]=(cc[s.club]||0)+1;tc[s.target]=(tc[s.target]||0)+1;(mx[s.club]=mx[s.club]||{})[s.target]=(mx[s.club][s.target]||0)+1;}));});
   const avg=(a,f)=>a.length?a.reduce((x,y)=>x+f(y),0)/a.length:null;
   const card=(t,v,sub)=>`<div class="kpi"><small>${t}</small><b>${v}</b><i>${sub}</i></div>`;
   const a18=avg(c18,m=>m.st),a9=avg(c9,m=>m.st);
@@ -666,8 +675,9 @@ function renderStats(){
     card('平均パット数',played?(putts/played*18).toFixed(1):'--',played?`18H換算／${(putts/played).toFixed(2)} PT/H`:'対象なし'),
     card('FWキープ率 平均',pct(fwE?fw/fwE*100:null),`${fw}/${fwE} ホール`),
     card('パーオン率 平均',pct(played?gir/played*100:null),`${gir}/${played} ホール`)].join('');
-  $('clubBars').innerHTML=bars(cc,S.clubs,'');
-  $('tgtBars').innerHTML=bars(tc,S.targets,'t');
+  $('clubBars').innerHTML=bars(cc,S.clubs.filter(c=>!AUTO_PAIR.includes(c)),'');
+  $('tgtBars').innerHTML=bars(tc,S.targets.filter(t=>!AUTO_PAIR.includes(t)),'t');
+  renderPutt(rs);
   const mc=[...S.clubs,...Object.keys(mx)].filter((c,i,a)=>mx[c]&&a.indexOf(c)===i);
   const mt=[...S.targets,...Object.keys(tc)].filter((t,i,a)=>a.indexOf(t)===i&&mc.some(c=>mx[c][t]));
   $('matrix').innerHTML=mc.length?`<table class="mx"><tr><th>クラブ</th>${mt.map(t=>`<th>${esc(t)}</th>`).join('')}<th>計</th></tr>${mc.map(c=>{const tot=Object.values(mx[c]).reduce((a,b)=>a+b,0);
@@ -695,7 +705,24 @@ function renderTrend(rs){
     return `<div class="kpi"><small>Par${p}</small><b>${a==null?'--':a.toFixed(2)}</b><i>${a==null?'対象なし':'Par対比 '+fmtRelF(a-p)+'・'+n+'H'}</i></div>`;}).join('');
   $('parNote').textContent='途中終了分も含む全入力ホールで計算。';
 }
+function renderPutt(rs){
+  let n=0,p1=0,p3=0,gN=0,gP=0,oN=0,oP=0;const dist={'0':0,'1':0,'2':0,'3+':0};
+  rs.forEach(r=>order(r).forEach(i=>{const hm=holeM(r.holes[i]);if(!hm.played)return;n++;
+    const p=hm.putts;dist[p>=3?'3+':String(p)]++;if(p===1)p1++;if(p>=3)p3++;
+    if(hm.gir){gN++;gP+=p;}else{oN++;oP+=p;}}));
+  const card=(t,v,sub)=>`<div class="kpi"><small>${t}</small><b>${v}</b><i>${sub}</i></div>`;
+  $('puttGrid').innerHTML=[
+    card('パーオン時 平均',gN?(gP/gN).toFixed(2):'--',gN?`${gN}ホール`:'対象なし'),
+    card('パーオン外 平均',oN?(oP/oN).toFixed(2):'--',oN?`${oN}ホール`:'対象なし'),
+    card('1パット率',pct(n?p1/n*100:null),`${p1}/${n} ホール`),
+    card('3パット以上率',pct(n?p3/n*100:null),`${p3}/${n} ホール`)].join('');
+  const d={};Object.keys(dist).forEach(k=>{if(dist[k])d[k+'PT']=dist[k];});
+  $('puttBars').innerHTML=bars(d,['0PT','1PT','2PT','3+PT'],'');
+}
 function renderBk(){const t=+localStorage.getItem(K.bk);
+  const days=t?Math.floor((Date.now()-t)/864e5):null,need=validRounds().length>0&&(days==null||days>=30);
+  $('bkAlert').hidden=!need;
+  if(need)$('bkAlertMsg').textContent=days==null?'まだバックアップがありません。ファイルアプリに保存してください。':`前回のバックアップから${days}日経過しています。`;
   $('bkState').textContent=t?`最終バックアップ：${new Date(t).toLocaleString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'まだバックアップしていません';}
 function bars(counts,ord,cls){
   const keys=[...ord.filter(k=>counts[k]),...Object.keys(counts).filter(k=>!ord.includes(k))];if(!keys.length)return'<div class="empty">データがありません</div>';
@@ -747,7 +774,6 @@ $('mReset').addEventListener('click',()=>{$('mClubs').value=DEF_CLUBS.join(', ')
 $('shareSel').addEventListener('change',e=>{shareId=e.target.value;renderShare();});
 $('btnImg').addEventListener('click',saveImage);
 $('btnEditShare').addEventListener('click',()=>shareId&&loadRound(shareId));
-$('btnCsvOne').addEventListener('click',()=>{const r=rounds.find(x=>x.id===shareId);if(r)dlCSV(holeRows([r]),`golf_${r.date}_holes.csv`);});
 $('stFilter').addEventListener('change',renderStats);
 $('histList').addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;const id=b.dataset.id;
   if(b.dataset.act==='edit')loadRound(id);
@@ -758,6 +784,7 @@ $('histList').addEventListener('click',e=>{const b=e.target.closest('button[data
     if(cur.id===id){cur=newRound();holeIdx=order(cur)[0];resetPal();localStorage.setItem(K.cur,cur.id);}renderAll();toast('削除しました');});});
 $('btnCsvRounds').addEventListener('click',()=>dlCSV(roundRows(validRounds()),`golf_rounds_${today()}.csv`));
 $('btnCsvShots').addEventListener('click',()=>dlCSV(shotRows(validRounds()),`golf_shots_${today()}.csv`));
+$('btnBackup2').addEventListener('click',()=>$('btnBackup').click());
 $('btnBackup').addEventListener('click',()=>{download(new Blob([JSON.stringify({version:3,settings:S,rounds},null,1)],{type:'application/json'}),`golf_backup_${today()}.json`);localStorage.setItem(K.bk,String(Date.now()));renderBk();});
 $('btnRestore').addEventListener('click',()=>$('fileRestore').click());
 $('fileRestore').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
